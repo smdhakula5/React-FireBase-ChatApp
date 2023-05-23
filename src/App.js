@@ -108,30 +108,40 @@ export default function App() {
       try {
         const roomsSnapshot = await getDocs(collection(db, 'messages'));
         const roomNames = new Set();
-
+    
         roomsSnapshot.forEach((doc) => {
           const roomName = doc.data().room;
-          roomNames.add(roomName);
+    
+          // Skip private chat rooms
+          if (!roomName.includes('-')) {
+            roomNames.add(roomName);
+          }
         });
-
+    
         setRoomList([...roomNames]);
-
+    
         const unsubscribe = onSnapshot(collection(db, 'messages'), (snapshot) => {
           const updatedRoomList = new Set();
-
+    
           snapshot.forEach((doc) => {
             const roomName = doc.data().room;
-            updatedRoomList.add(roomName);
+    
+            // Skip private chat rooms
+            if (!roomName.includes('-')) {
+              updatedRoomList.add(roomName);
+            }
           });
-
+    
           setRoomList([...updatedRoomList]);
         });
-
+    
         return () => unsubscribe();
       } catch (error) {
         console.log('Error fetching rooms:', error);
       }
     }
+    
+    
 
     async function fetchUsers() {
       try {
@@ -161,18 +171,19 @@ export default function App() {
         );
         const privateRoomsSnapshot = await getDocs(privateRoomsQuery);
         const privateRoomNames = [];
-
+    
         privateRoomsSnapshot.forEach((doc) => {
           const participants = doc.data().participants;
           const otherUser = participants.find((participant) => participant !== currentUser);
           privateRoomNames.push(`${currentUser}-${otherUser}`);
         });
-
+    
         setRoomList((prevRoomList) => [...prevRoomList, ...privateRoomNames]);
       } catch (error) {
         console.log('Error fetching private rooms:', error);
       }
     }
+    
 
     async function fetchData() {
       await Promise.all([fetchRooms(), fetchUsers(), fetchPrivateRooms()]);
